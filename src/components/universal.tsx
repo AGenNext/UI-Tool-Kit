@@ -1,6 +1,9 @@
 import React, { ReactNode } from 'react';
 
 export type UniversalType = string;
+export type ActionStatus = 'available' | 'queued' | 'running' | 'completed' | 'failed' | 'blocked' | 'requiresApproval';
+export type ActionRisk = 'low' | 'medium' | 'high' | 'critical';
+export type TriggerMode = 'manual' | 'automatic' | 'scheduled' | 'event' | 'condition' | 'approval';
 
 export interface UniversalCardProps {
   type: UniversalType;
@@ -12,6 +15,29 @@ export interface UniversalCardProps {
   properties?: Record<string, string | number | boolean | null | undefined>;
   tags?: string[];
   actions?: ReactNode;
+}
+
+export interface ActionTrigger {
+  mode: TriggerMode;
+  source?: string;
+  event?: string;
+  condition?: string;
+  schedule?: string;
+  actor?: string;
+}
+
+export interface ActionCardProps extends Omit<UniversalCardProps, 'type'> {
+  actionType: string;
+  actionLabel?: string;
+  verb?: string;
+  target?: string;
+  intent?: string;
+  status?: ActionStatus;
+  risk?: ActionRisk;
+  requiresConfirmation?: boolean;
+  payloadSummary?: string;
+  actor?: string;
+  trigger?: ActionTrigger;
 }
 
 export function UniversalCard({
@@ -58,9 +84,45 @@ export function EntityCard(props: Omit<UniversalCardProps, 'type'> & { entityTyp
   return <UniversalCard type={`entity:${entityType}`} {...rest} />;
 }
 
-export function ActionCard(props: Omit<UniversalCardProps, 'type'> & { actionType: string; status?: 'available' | 'running' | 'completed' | 'failed' | 'blocked' }) {
-  const { actionType, status = 'available', properties, ...rest } = props;
-  return <UniversalCard type={`action:${actionType}`} properties={{ status, ...properties }} {...rest} />;
+export function ActionCard({
+  actionType,
+  actionLabel,
+  verb,
+  target,
+  intent,
+  status = 'available',
+  risk = 'low',
+  requiresConfirmation = false,
+  payloadSummary,
+  actor,
+  trigger,
+  properties,
+  ...rest
+}: ActionCardProps) {
+  return (
+    <UniversalCard
+      type={`action:${actionType}`}
+      properties={{
+        action: actionLabel ?? actionType,
+        verb,
+        target,
+        intent,
+        status,
+        risk,
+        requiresConfirmation,
+        actor,
+        payloadSummary,
+        triggerMode: trigger?.mode,
+        triggerSource: trigger?.source,
+        triggerEvent: trigger?.event,
+        triggerCondition: trigger?.condition,
+        triggerSchedule: trigger?.schedule,
+        triggerActor: trigger?.actor,
+        ...properties,
+      }}
+      {...rest}
+    />
+  );
 }
 
 export function EventCard(props: Omit<UniversalCardProps, 'type'> & { eventType: string; time?: string }) {
